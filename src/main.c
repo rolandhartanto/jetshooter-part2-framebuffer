@@ -98,7 +98,7 @@ int main() {
     clearScreen();
     point p1 = setPoint(350,250);
     point p2 = setPoint(150,250);
-    point pivot = setPoint(250,250);
+    point pivot = setPoint(150+200,90+250);
 
     //printPixel(p1.x, p1.y ,255,0,0);
     
@@ -109,22 +109,56 @@ int main() {
     point p1a,p2a;
 
     double k = 1.0;
-    drawAirplane(setPoint(100,100),1,0);
-    drawCircle(setPoint(200,200), 25, 255, 0, 255);
-    //drawPolygon(setPoint(100,100), 100, 10, 0);
-    /*while(1){
-        
-        for(i = 1; i < 360; i++){
+    int enlarge = 1;
+    int right = 1;
+    int counter = 0;
+    int x=200,y=250;
+    double degree = 0;
+    while(1){    
+        for(i = 1; i < 360; i+=24){
             clearScreen();
+            drawAirplane(setPoint(x,y),k,degree);
+            
+            if((x < 230)&&(right)){
+                x++;
+                degree -= 0.2;
+            }else{
+                right = 0;
+                x--;
+                degree += 0.2;
+                if(x == 170){
+                    right = 1;
+                }
+            }
+            
             //p1a = rotatePoint(p1, i, pivot);
             //p2a = rotatePoint(p2, i, pivot);
             //drawLine(p2a,p1a,1);
-            drawPropeller(32,8,pivot,i,k);
-            k+=0.025;
+            drawPropeller(120,30,setPoint(x+150,y+90),i,k,150,0,20);
+            if(counter >= 50){
+	        k -= 0.02;
+	    }
+            if(k >= 1.8){
+                enlarge = 0;
+                counter++;
+            }
+            
+            if(k <= 1.0){
+                enlarge = 1;
+                counter = 0;
+            }
+
+            if(enlarge){
+                k += 0.02;
+            }
+
+            //printf("%lf\n",degree);
+            rasterize(pivot.y-120, pivot.x-120, 240,240,150,0,20);
+            
             //printPixel(p1.x, p1.y, 0, 100, 255);
-            for(j = 0; j < 1000000; j++){}
+            for(j = 0; j < 10000000; j++){}
         }
-    }*/
+    }
     
     munmap(fbp, screensize);
     close(fbfd);
@@ -232,7 +266,7 @@ void init(){
 void clearScreen() {
     for (int h = 0; h < HEIGHT; h++){
         for (int w = 0; w < WIDTH; w++) {
-	    printPixel(w,h,255,255,255);
+	    printPixel(w,h,122,224,255);
         }
     }
 }
@@ -454,52 +488,94 @@ void drawPropeller(int d1, int d2, point pivot, double theta, double scale_facto
 
 void drawAirplane(point offset, double scale_factor, double theta){
     //left wing
-
+    point p1,p2, pcolor;
+    point pivot = setPoint(150+offset.x, 90+offset.y);
     for(int i=0;i<3;i++){
-        drawLine(jet.left_wing.borders[i].point1, jet.left_wing.borders[i].point2, 1, 107,91,0);    
+        p1 = setPoint(jet.left_wing.borders[i].point1.x + offset.x, 
+                      jet.left_wing.borders[i].point1.y + offset.y);
+        p1 = scalePoint(p1, scale_factor, pivot);
+        p1 = rotatePoint(p1, theta, pivot);
+
+        p2 = setPoint(jet.left_wing.borders[i].point2.x + offset.x, 
+                      jet.left_wing.borders[i].point2.y + offset.y);
+        p2 = scalePoint(p2, scale_factor, pivot);
+        p2 = rotatePoint(p2, theta, pivot);
+
+        if(i == 0){
+            pcolor = p1;
+        }
+        
+        drawLine(p1, p2, 1, 107,91,0);    
     }
-    rasterize(jet.left_wing.borders[0].point1.y,
-              jet.left_wing.borders[0].point1.x,
-              15,125,107,91,0);
+    rasterize(pcolor.y-50 * scale_factor, pcolor.x, 150 * scale_factor,150 * scale_factor,107,91,0);
     
     //right wing
     for(int i=0;i<3;i++){
-        drawLine(jet.right_wing.borders[i].point1, jet.right_wing.borders[i].point2, 1, 107,91,0);    
+        p1 = setPoint(jet.right_wing.borders[i].point1.x + offset.x, 
+                      jet.right_wing.borders[i].point1.y + offset.y);
+        p1 = scalePoint(p1, scale_factor, pivot);
+        p1 = rotatePoint(p1, theta, pivot);
+
+        p2 = setPoint(jet.right_wing.borders[i].point2.x + offset.x, 
+                      jet.right_wing.borders[i].point2.y + offset.y);
+        p2 = scalePoint(p2, scale_factor, pivot);
+        p2 = rotatePoint(p2, theta, pivot);
+
+        if(i == 0){
+            pcolor = p1;
+        }
+        
+        drawLine(p1, p2, 1, 107,91,0);     
     }
-    rasterize(jet.right_wing.borders[0].point1.y,
-              jet.right_wing.borders[0].point1.x,
-              15,125,107,91,0);
+    rasterize(pcolor.y-50 * scale_factor, pcolor.x-20, 150 * scale_factor,150 * scale_factor,107,91,0);
     
     //tail
     for(int i=0;i<3;i++){
-        drawLine(jet.tail.borders[i].point1, jet.tail.borders[i].point2, 1, 107,91,0);    
+        p1 = setPoint(jet.tail.borders[i].point1.x + offset.x, 
+                      jet.tail.borders[i].point1.y + offset.y);
+        p1 = scalePoint(p1, scale_factor, pivot);
+        p1 = rotatePoint(p1, theta, pivot);
+
+        p2 = setPoint(jet.tail.borders[i].point2.x + offset.x, 
+                      jet.tail.borders[i].point2.y + offset.y);
+        p2 = scalePoint(p2, scale_factor, pivot);
+        p2 = rotatePoint(p2, theta, pivot);
+
+        if(i == 0){
+            pcolor = p1;
+        }
+        
+        drawLine(p1, p2, 1, 107,91,0);   
     }
-    rasterize(jet.tail.borders[0].point1.y,
-              jet.tail.borders[0].point1.x-8,
-              60,16,107,91,0);
+    rasterize(pcolor.y-20 * scale_factor, pcolor.x-20 * scale_factor, 150 * scale_factor,150 * scale_factor,107,91,0);
+
     //cockpit
-    drawCircle(jet.cockpit_center, jet.cockpit_radius,114,114,114);
-    rasterize(jet.cockpit_center.y-jet.cockpit_radius, 
-              jet.cockpit_center.x-jet.cockpit_radius, 
-              2* (jet.cockpit_radius), 
-              2* (jet.cockpit_radius), 
+    p1 = setPoint(jet.cockpit_center.x + offset.x, jet.cockpit_center.y + offset.y);
+    p1 = rotatePoint(scalePoint(p1,scale_factor,pivot),theta,pivot);
+    drawCircle(p1, jet.cockpit_radius * scale_factor, 114,114,114);
+    rasterize(p1.y - (jet.cockpit_radius+5) * scale_factor, 
+              p1.x - (jet.cockpit_radius+5) * scale_factor, 
+              2 * (jet.cockpit_radius+5) * scale_factor, 
+              2 * (jet.cockpit_radius+5) * scale_factor, 
               114, 114, 114);
 
     //body
-    drawCircle(jet.body_center, jet.body_radius,168,143,0);
-    rasterize(jet.body_center.y-jet.body_radius, 
-              jet.body_center.x-jet.body_radius, 
-              2* (jet.body_radius), 
-              2* (jet.body_radius), 
+    p1 = setPoint(jet.body_center.x + offset.x, jet.body_center.y + offset.y);
+    drawCircle(p1, jet.body_radius * scale_factor,168,143,0);
+    rasterize(p1.y - (jet.body_radius+5) * scale_factor, 
+              p1.x - (jet.body_radius+5) * scale_factor, 
+              2 * (jet.body_radius+5) * scale_factor, 
+              2 * (jet.body_radius+5) * scale_factor, 
               168, 143, 0);
 
     //inner
-    drawCircle(jet.inner_center, jet.inner_radius,107,91,0);
-    rasterize(jet.inner_center.y-jet.inner_radius, 
-              jet.inner_center.x-jet.inner_radius, 
-              2* (jet.inner_radius), 
-              2* (jet.inner_radius), 
-              107, 91, 0);
+    p1 = setPoint(jet.inner_center.x + offset.x, jet.inner_center.y + offset.y);
+    drawCircle(p1, jet.inner_radius * scale_factor,107, 80,0);
+    rasterize(p1.y - (jet.inner_radius+5) * scale_factor, 
+              p1.x - (jet.inner_radius+5) * scale_factor, 
+              2 * (jet.inner_radius+5) * scale_factor, 
+              2 * (jet.inner_radius+5) * scale_factor, 
+              107, 80, 0);
 
     
 }
