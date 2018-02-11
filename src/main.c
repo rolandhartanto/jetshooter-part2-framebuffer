@@ -41,12 +41,21 @@ typedef struct{
 }shape;
 
 typedef struct{
-     shape tail; // triangle
-     shape left_wing; //triangle
-     shape right_wing; //triangle
-     
+    shape tail; // triangle
+    shape left_wing; //triangle
+    shape right_wing; //triangle
+    
+    point cockpit_center;
+    int cockpit_radius;
+    
+    point body_center;
+    int body_radius;
+    
+    point inner_center;
+    int inner_radius;
 }airplane;
 
+airplane jet;
 char bg[1000][1000];
 
 char *fbp = 0;
@@ -65,7 +74,7 @@ point scalePoint(point p, double scale_factor, point pivot);
 //line setLine(point x, point y);
 //line translateLine(int dx, int dy);
 //line rotateLine(line l, int theta, point pivot);
-
+void loadFile();
 void init();
 void printPixel(int x, int y, int colorR, int colorG, int colorB);
 void drawLine(point p1, point p2, int thickness, int colorR, int colorG, int colorB);
@@ -79,11 +88,13 @@ int isBlack(int x, int y, int colorR, int colorG, int colorB);
 void rasterize(int roffset, int coffset, int height, int width, int colorR, int colorG, int colorB);
 
 void drawPropeller(int d1, int d2, point pivot, double theta, double scale_factor, int colorR, int colorG, int colorB);//theta = 0 start from pivot.x-d1/2
+void drawAirplane(point offset, double scale_factor, double theta);
 
 int main() {
     init();   
     int i,j;
     
+    loadFile();
     clearScreen();
     point p1 = setPoint(350,250);
     point p2 = setPoint(150,250);
@@ -96,8 +107,10 @@ int main() {
     //drawLine(pivot,p,1);
 
     point p1a,p2a;
+
     double k = 1.0;
-    drawCircle(setPoint(200,200), 50, 255, 0, 255);
+    drawAirplane(setPoint(100,100),1,0);
+    drawCircle(setPoint(200,200), 25, 255, 0, 255);
     //drawPolygon(setPoint(100,100), 100, 10, 0);
     /*while(1){
         
@@ -126,6 +139,58 @@ void swap(int* a, int* b){
 
 double DEG_to_RAD(double theta){
     return (theta*M_PI/180.0);    
+}
+
+/***************** LOAD FILE ******************/
+void loadFile(){
+    FILE *fairplane;
+    fairplane = fopen("data/airplane.txt","r");
+    if(fairplane == NULL) {
+        printf("No data in font.txt\n");
+        return 0;
+    }
+    else {
+        int xa,xb,ya,yb;
+        int num_of_line;
+        printf("ok\n");
+        for(int i = 1; i <= 6; i++){
+            char dummy;
+            fscanf(fairplane, "%d",&num_of_line);
+            
+            for(int j = 0; j<num_of_line; j++){
+                //fscanf(fairplane, "%d %d %d %d",&xa,&ya,&xb,&yb);
+                //printf("%d %d %d %d\n",xa,ya,xb,yb);
+                if(i == 1){//tail
+                    fscanf(fairplane, "%d %d %d %d",&xa,&ya,&xb,&yb);
+                    jet.tail.borders[j].point1 = setPoint(xa,ya);
+                    jet.tail.borders[j].point2 = setPoint(xb,yb);
+                }else if(i == 2){//left wing
+                    fscanf(fairplane, "%d %d %d %d",&xa,&ya,&xb,&yb);
+                    jet.left_wing.borders[j].point1 = setPoint(xa,ya);
+                    jet.left_wing.borders[j].point2 = setPoint(xb,yb);
+                }else if(i == 3){//right wing
+                    fscanf(fairplane, "%d %d %d %d",&xa,&ya,&xb,&yb);
+                    jet.right_wing.borders[j].point1 = setPoint(xa,ya);
+                    jet.right_wing.borders[j].point2 = setPoint(xb,yb);
+                }else if(i == 4){//body
+                    fscanf(fairplane, "%d %d %d",&xa,&ya,&xb);
+                    jet.body_center = setPoint(xa,ya);
+                    jet.body_radius = xb;
+                }else if(i == 5){//inner
+                    fscanf(fairplane, "%d %d %d",&xa,&ya,&xb);
+                    jet.inner_center = setPoint(xa,ya);
+                    jet.inner_radius = xb;
+                }else if(i == 6){//cockpit
+                    fscanf(fairplane, "%d %d %d",&xa,&ya,&xb);
+                    jet.cockpit_center = setPoint(xa,ya);
+                    jet.cockpit_radius = xb;
+                }
+                
+                
+            }
+        }
+    }
+    fclose(fairplane);
 }
 
 /***************** FRAMEBUFFER *****************/
@@ -248,8 +313,6 @@ void drawCircle(point center, int radius, int colorR, int colorG, int colorB){//
 
         }
     }
-    
-    rasterize(center.x-radius, center.y-radius, 2* radius, 2* radius, colorR, colorG, colorB);
 }
 
 /*STILL BUGGY
@@ -389,4 +452,55 @@ void drawPropeller(int d1, int d2, point pivot, double theta, double scale_facto
     
 }
 
+void drawAirplane(point offset, double scale_factor, double theta){
+    //left wing
+
+    for(int i=0;i<3;i++){
+        drawLine(jet.left_wing.borders[i].point1, jet.left_wing.borders[i].point2, 1, 107,91,0);    
+    }
+    rasterize(jet.left_wing.borders[0].point1.y,
+              jet.left_wing.borders[0].point1.x,
+              15,125,107,91,0);
+    
+    //right wing
+    for(int i=0;i<3;i++){
+        drawLine(jet.right_wing.borders[i].point1, jet.right_wing.borders[i].point2, 1, 107,91,0);    
+    }
+    rasterize(jet.right_wing.borders[0].point1.y,
+              jet.right_wing.borders[0].point1.x,
+              15,125,107,91,0);
+    
+    //tail
+    for(int i=0;i<3;i++){
+        drawLine(jet.tail.borders[i].point1, jet.tail.borders[i].point2, 1, 107,91,0);    
+    }
+    rasterize(jet.tail.borders[0].point1.y,
+              jet.tail.borders[0].point1.x-8,
+              60,16,107,91,0);
+    //cockpit
+    drawCircle(jet.cockpit_center, jet.cockpit_radius,114,114,114);
+    rasterize(jet.cockpit_center.y-jet.cockpit_radius, 
+              jet.cockpit_center.x-jet.cockpit_radius, 
+              2* (jet.cockpit_radius), 
+              2* (jet.cockpit_radius), 
+              114, 114, 114);
+
+    //body
+    drawCircle(jet.body_center, jet.body_radius,168,143,0);
+    rasterize(jet.body_center.y-jet.body_radius, 
+              jet.body_center.x-jet.body_radius, 
+              2* (jet.body_radius), 
+              2* (jet.body_radius), 
+              168, 143, 0);
+
+    //inner
+    drawCircle(jet.inner_center, jet.inner_radius,107,91,0);
+    rasterize(jet.inner_center.y-jet.inner_radius, 
+              jet.inner_center.x-jet.inner_radius, 
+              2* (jet.inner_radius), 
+              2* (jet.inner_radius), 
+              107, 91, 0);
+
+    
+}
 
