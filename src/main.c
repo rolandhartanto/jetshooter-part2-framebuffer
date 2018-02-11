@@ -68,17 +68,17 @@ point scalePoint(point p, double scale_factor, point pivot);
 
 void init();
 void printPixel(int x, int y, int colorR, int colorG, int colorB);
-void drawLine(point p1, point p2, int thickness);
-void drawCircle(point center, int radius);
+void drawLine(point p1, point p2, int thickness, int colorR, int colorG, int colorB);
+void drawCircle(point center, int radius, int colorR, int colorG, int colorB);
 void clearScreen();
 
 //void drawPolygon(point center, int radius, int num_of_side, double theta);//STILL BUGGY(int&floating point problem), polygon with same side length, theta=0 start from center.y-radius
 
 void getPixelColor(int x, int y, int *rColor, int *gColor, int *bColor);
-int isBlack(int x, int y);
-void rasterize(int roffset, int coffset, int height, int width);
+int isBlack(int x, int y, int colorR, int colorG, int colorB);
+void rasterize(int roffset, int coffset, int height, int width, int colorR, int colorG, int colorB);
 
-void drawPropeller(int d1, int d2, point pivot, double theta, double scale_factor);//theta = 0 start from pivot.x-d1/2
+void drawPropeller(int d1, int d2, point pivot, double theta, double scale_factor, int colorR, int colorG, int colorB);//theta = 0 start from pivot.x-d1/2
 
 int main() {
     init();   
@@ -90,12 +90,14 @@ int main() {
     point pivot = setPoint(250,250);
 
     //printPixel(p1.x, p1.y ,255,0,0);
-    printPixel(pivot.x, pivot.y,255,0,0);
+    
+    //printPixel(pivot.x, pivot.y,255,0,0);
+    //printf("%d\n",isBorder(pivot.x, pivot.y,255,0,0));
     //drawLine(pivot,p,1);
 
     point p1a,p2a;
     double k = 1.0;
-    drawCircle(setPoint(200,200), 50);
+    drawCircle(setPoint(200,200), 50, 255, 0, 255);
     //drawPolygon(setPoint(100,100), 100, 10, 0);
     /*while(1){
         
@@ -182,7 +184,7 @@ void printPixel(int x, int y, int colorR, int colorG, int colorB){	//Print Pixel
     }
 }
 
-void drawLine(point p1, point p2, int thickness){//Bresenham
+void drawLine(point p1, point p2, int thickness, int colorR, int colorG, int colorB){//Bresenham
     int x1 = p1.x, y1 = p1.y, x2 = p2.x, y2 = p2.y;
     int steep = 0;
     if(abs(x1-x2) < abs(y1-y2)){
@@ -201,9 +203,9 @@ void drawLine(point p1, point p2, int thickness){//Bresenham
     int y = y1;
     for(int x = x1; x <= x2; x++){
         if(steep){
-            printPixel(y,x,0,0,0);
+            printPixel(y,x,colorR,colorG,colorB);
         }else{
-            printPixel(x,y,0,0,0);
+            printPixel(x,y,colorR,colorG,colorB);
         }
         err+=derr;
         if(err > dx){
@@ -213,13 +215,13 @@ void drawLine(point p1, point p2, int thickness){//Bresenham
     }
 }
 
-void drawCircle(point center, int radius){//Mid Point Algo
+void drawCircle(point center, int radius, int colorR, int colorG, int colorB){//Mid Point Algo
     int x = radius, y = 0;
-    printPixel(x + center.x, y + center.y, 0, 0, 0);
+    printPixel(x + center.x, y + center.y, colorR, colorG, colorB);
     if(radius > 0){
-        printPixel(-x + center.x, y + center.y, 0, 0, 0);
-        printPixel(y + center.x, x + center.y, 0, 0, 0);
-        printPixel(y + center.x, -x + center.y, 0, 0, 0);      
+        printPixel(-x + center.x, y + center.y, colorR, colorG, colorB);
+        printPixel(y + center.x, x + center.y, colorR, colorG, colorB);
+        printPixel(y + center.x, -x + center.y, colorR, colorG, colorB);      
     }
     
     int P = 1 - radius;
@@ -233,21 +235,21 @@ void drawCircle(point center, int radius){//Mid Point Algo
         }
 
         if(x < y){ break; }
-        printPixel(x + center.x, y + center.y, 0, 0, 0);
-        printPixel(-x + center.x, y + center.y, 0, 0, 0);
-        printPixel(x + center.x, -y + center.y, 0, 0, 0);
-        printPixel(-x + center.x, -y + center.y, 0, 0, 0); 
+        printPixel(x + center.x, y + center.y, colorR, colorG, colorB);
+        printPixel(-x + center.x, y + center.y, colorR, colorG, colorB);
+        printPixel(x + center.x, -y + center.y, colorR, colorG, colorB);
+        printPixel(-x + center.x, -y + center.y, colorR, colorG, colorB); 
 
         if(x != y){
-            printPixel(y + center.x, x + center.y, 0, 0, 0);
-            printPixel(-y + center.x, x + center.y, 0, 0, 0);
-            printPixel(y + center.x, -x + center.y, 0, 0, 0);
-            printPixel(-y + center.x, -x + center.y, 0, 0, 0); 
+            printPixel(y + center.x, x + center.y, colorR, colorG, colorB);
+            printPixel(-y + center.x, x + center.y, colorR, colorG, colorB);
+            printPixel(y + center.x, -x + center.y, colorR, colorG, colorB);
+            printPixel(-y + center.x, -x + center.y, colorR, colorG, colorB); 
 
         }
     }
     
-    rasterize(center.x-radius, center.y-radius, 2* radius, 2* radius);
+    rasterize(center.x-radius, center.y-radius, 2* radius, 2* radius, colorR, colorG, colorB);
 }
 
 /*STILL BUGGY
@@ -270,32 +272,37 @@ void drawPolygon(point center, int radius, int num_of_side, double theta){
 void getPixelColor(int x, int y, int *rColor, int *gColor, int *bColor) {
       location = (x+vinfo.xoffset) * (vinfo.bits_per_pixel/8) +
                        (y+vinfo.yoffset) * finfo.line_length;
-            *rColor = *(fbp+location);
+            *bColor = *(fbp+location);
             *gColor = *(fbp+location+1);
-            *bColor = *(fbp+location+2);
+            *rColor = *(fbp+location+2);
 }
 
-int isBlack(int x, int y) {
-    int rColor;
-    int gColor;
-    int bColor;
-    getPixelColor(x,y,&rColor, &gColor, &bColor);
-    return(rColor == 0 && gColor == 0 && bColor == 0);
+int isBorder(int x, int y, int colorR, int colorG, int colorB) {
+    int rColorfb;
+    int gColorfb;
+    int bColorfb;
+    getPixelColor(x,y,&rColorfb, &gColorfb, &bColorfb);
+    
+    rColorfb = (rColorfb < 0)? rColorfb + 256:rColorfb;
+    gColorfb = (gColorfb < 0)? gColorfb + 256:gColorfb;
+    bColorfb = (bColorfb < 0)? bColorfb + 256:bColorfb;
+    
+    return(rColorfb == colorR && gColorfb == colorG && bColorfb == colorB);
 }
 
-void rasterize(int roffset, int coffset, int height, int width) {
+void rasterize(int roffset, int coffset, int height, int width, int colorR, int colorG, int colorB) {
     unsigned char onFlag = 0;
     unsigned char started = 0;
     for(int i = 0; i < height; i++) {
-        int arr[width];//ganti
+        int arr[width];
         int nPoint = 0;
         int y = roffset + i;
 
         for(int j = 0; j <= width; j++) {
             int x = coffset + j;
-            if(isBlack(x,y)) {
+            if(isBorder(x,y,colorR,colorG,colorB)) {
                 arr[nPoint] = j;
-                while(isBlack(x,y)) {
+                while(isBorder(x,y,colorR,colorG,colorB)) {
                     j++;
                     x = coffset + j;
                 }
@@ -325,7 +332,7 @@ void rasterize(int roffset, int coffset, int height, int width) {
                     if(arr[endPoint] > arr[startPoint]){
                         for(int jt = arr[startPoint]; jt < arr[endPoint];jt++){
                             int x = coffset + jt;
-                            printPixel(x,y,0,0,0);
+                            printPixel(x,y,colorR,colorG,colorB);
                         }
                     }
                 }
@@ -363,7 +370,7 @@ point scalePoint(point p, double scale_factor, point pivot){
 }
 
 /************************* DRAW CUSTOM OBJECT *************************/
-void drawPropeller(int d1, int d2, point pivot, double theta, double scale_factor){
+void drawPropeller(int d1, int d2, point pivot, double theta, double scale_factor, int colorR, int colorG, int colorB){
     point p1, p2, p3, p4;
     p1 = setPoint(pivot.x-d1/2, pivot.y);
     p2 = setPoint(pivot.x, pivot.y-d2/2);
@@ -375,10 +382,10 @@ void drawPropeller(int d1, int d2, point pivot, double theta, double scale_facto
     p3 = rotatePoint(scalePoint(p3, scale_factor, pivot), theta, pivot);
     p4 = rotatePoint(scalePoint(p4, scale_factor, pivot), theta, pivot);
 
-    drawLine(p1, p2, 1);
-    drawLine(p2, p3, 1);
-    drawLine(p3, p4, 1);
-    drawLine(p4, p1, 1);
+    drawLine(p1, p2, 1, colorR, colorG, colorB);
+    drawLine(p2, p3, 1, colorR, colorG, colorB);
+    drawLine(p3, p4, 1, colorR, colorG, colorB);
+    drawLine(p4, p1, 1, colorR, colorG, colorB);
     
 }
 
