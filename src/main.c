@@ -56,12 +56,32 @@ typedef struct{
 }airplane;
 
 airplane jet;
+line hasil;//untuk mencatat hasil line clipping
 char bg[1000][1000];
 
 char *fbp = 0;
 int fbfd = 0;
 long int screensize = 0;
 long int location = 0;
+
+//for cohen sutherland algo
+const int INSIDE = 0;
+const int LEFT = 1;
+const int RIGHT = 2;
+const int BOTTOM = 4;
+const int TOP = 8;
+
+//define const int x_max, y_max, x_min, y_min
+const int x_min = 0;
+const int y_min = HEIGHT;
+const int x_max = WIDTH;
+const int y_max = 0;
+
+// menghitung region code of a point
+int computeCode(point p);
+
+//implement cohen sutherlan
+void cohenSutherlandClipping(point p1, point p2);
 
 void swap(int* a, int* b);
 double DEG_to_RAD(double theta);
@@ -136,9 +156,9 @@ int main() {
             //drawLine(p2a,p1a,1);
             drawPropeller(120,30,setPoint(x+150,y+90),i,k,150,0,20);
             if(counter >= 50){
-	        k -= 0.02;
-	    }
-            if(k >= 1.8){
+	           k -= 0.02;
+	        }
+            if(k >= 5){
                 enlarge = 0;
                 counter++;
             }
@@ -156,7 +176,7 @@ int main() {
             rasterize(pivot.y-120, pivot.x-120, 240,240,150,0,20);
             
             //printPixel(p1.x, p1.y, 0, 100, 255);
-            for(j = 0; j < 10000000; j++){}
+            for(j = 0; j < 10000000; j++){} //for delay
         }
     }
     
@@ -472,18 +492,44 @@ void drawPropeller(int d1, int d2, point pivot, double theta, double scale_facto
     p1 = setPoint(pivot.x-d1/2, pivot.y);
     p2 = setPoint(pivot.x, pivot.y-d2/2);
     p3 = setPoint(pivot.x+d1/2, pivot.y);
-    p4 = setPoint(pivot.x, pivot.y+d2/2);
+    p4 = setPoint(pivot.x, pivot.y+d2/2);   
 
     p1 = rotatePoint(scalePoint(p1, scale_factor, pivot), theta, pivot);
     p2 = rotatePoint(scalePoint(p2, scale_factor, pivot), theta, pivot);
     p3 = rotatePoint(scalePoint(p3, scale_factor, pivot), theta, pivot);
     p4 = rotatePoint(scalePoint(p4, scale_factor, pivot), theta, pivot);
-
-    drawLine(p1, p2, 1, colorR, colorG, colorB);
-    drawLine(p2, p3, 1, colorR, colorG, colorB);
-    drawLine(p3, p4, 1, colorR, colorG, colorB);
-    drawLine(p4, p1, 1, colorR, colorG, colorB);
     
+    cohenSutherlandClipping(p1,p2);
+
+    point p1hasil, p2hasil;
+    p1hasil = hasil.point1; p2hasil = hasil.point2;
+    // if(p1hasil.x!=p1.x || p1hasil.y!=p1.y || p2hasil.y!=p1.x || p2hasil.y!=p1.x){}
+    printf("p1: %d %d p2: %d %d p1hasil:%d %d p2hasil: %d %d\n",p1.x,p1.y,p2.x,p2.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
+    p1 = hasil.point1; p2 = hasil.point2;
+    drawLine(p1, p2, 1, colorR, colorG, colorB);
+
+    cohenSutherlandClipping(p2,p3);
+    p1hasil = hasil.point1; p2hasil = hasil.point2;
+    printf("p2: %d %d p3: %d %d p1hasil:%d %d p2hasil: %d %d\n",p2.x,p2.y,p3.x,p3.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
+    p2 = hasil.point1; p3 = hasil.point2;
+    drawLine(p2, p3, 1, colorR, colorG, colorB);
+
+    //bikin garis klo misal sama"x nya di x_max
+    // if(p2)
+
+    cohenSutherlandClipping(p3,p4);
+    p1hasil = hasil.point1; p2hasil = hasil.point2;
+    printf("p3: %d %d p4: %d %d p1hasil:%d %d p2hasil: %d %d\n",p3.x,p3.y,p4.x,p4.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
+    p3 = hasil.point1; p4 = hasil.point2;
+    drawLine(p3, p4, 1, colorR, colorG, colorB);
+
+    cohenSutherlandClipping(p4,p1);
+    p1hasil = hasil.point1; p2hasil = hasil.point2;
+    printf("p4: %d %d p1: %d %d p1hasil:%d %d p2hasil: %d %d\n",p4.x,p4.y,p1.x,p1.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
+    p4 = hasil.point1; p1 = hasil.point2;
+    drawLine(p4, p1, 1, colorR, colorG, colorB);
+
+    // printf("p1: %d %d p2: %d %d p3: %d %d p4: %d %d\n",p1.x,p1.y,p2.x,p2.y,p3.x,p3.y,p4.x,p4.y);
 }
 
 void drawAirplane(point offset, double scale_factor, double theta){
@@ -505,6 +551,8 @@ void drawAirplane(point offset, double scale_factor, double theta){
             pcolor = p1;
         }
         
+        // cohenSutherlandClipping(p1,p2);
+        // p1 = hasil.point1; p2 = hasil.point2;
         drawLine(p1, p2, 1, 107,91,0);    
     }
     rasterize(pcolor.y-50 * scale_factor, pcolor.x, 150 * scale_factor,150 * scale_factor,107,91,0);
@@ -524,7 +572,9 @@ void drawAirplane(point offset, double scale_factor, double theta){
         if(i == 0){
             pcolor = p1;
         }
-        
+
+        cohenSutherlandClipping(p1,p2);
+        p1 = hasil.point1; p2 = hasil.point2;
         drawLine(p1, p2, 1, 107,91,0);     
     }
     rasterize(pcolor.y-50 * scale_factor, pcolor.x-20, 150 * scale_factor,150 * scale_factor,107,91,0);
@@ -545,6 +595,8 @@ void drawAirplane(point offset, double scale_factor, double theta){
             pcolor = p1;
         }
         
+        cohenSutherlandClipping(p1,p2);
+        p1 = hasil.point1; p2 = hasil.point2;
         drawLine(p1, p2, 1, 107,91,0);   
     }
     rasterize(pcolor.y-20 * scale_factor, pcolor.x-20 * scale_factor, 150 * scale_factor,150 * scale_factor,107,91,0);
@@ -580,3 +632,76 @@ void drawAirplane(point offset, double scale_factor, double theta){
     
 }
 
+int computeCode(point p){
+    int x = p.x;
+    int y = p.y;
+    int code = INSIDE;
+    if(x<x_min){code |= LEFT;}
+    else if(x>x_max){code |= RIGHT;}
+
+    if(y>y_min){code |= BOTTOM;}
+    else if(y<y_max){code|=TOP;}
+
+    return code;
+}
+
+void cohenSutherlandClipping(point p1, point p2){
+    double x1 = p1.x, y1 = p1.y;
+    double x2 = p2.x, y2 = p2.y;
+    int code1 = computeCode(p1);
+    int code2 = computeCode(p2);
+
+    int isDrawn = 0;
+    while(1){
+        if((code1==0) && (code2==0)){ //2 endline di dlm rectangle yang akan digambar
+            isDrawn = 1;
+            break;
+        }else if(code1 & code2){//hasil dan tidak 0, tidak digambar
+            //bikin point -1
+            point p1; p1.x = -1; p1.y = -1;
+            point p2; p2.x = -1; p2.y = -1;
+            hasil.point1 = p1;
+            hasil.point2 = p2;
+            break;
+        }else{
+            //harus diclip sebagian dari garis
+            int code_out;
+            double x,y;
+            //ambil code yang di luar rectangle
+            if(code1!=0){code_out = code1;}
+            else{code_out = code2;}
+
+            //find intersection point
+            if(code_out&TOP){//point di atas rectangle
+                x = x1+(x2-x1)*(y_max - y1) / (y2-y1);
+                y = y_max;
+            }else if(code_out & BOTTOM){//point di bawah rectangle
+                x = x1 + (x2-x1)*(y_min-y1) / (y2-y1);
+                y = y_min;
+            }else if(code_out & RIGHT){
+                y = y1 + (y2-y1) * (x_max-x1) / (x2-x1);
+                x = x_max;
+            }else if(code_out & LEFT){
+                y = y1 + (y2-y1) * (x_min-x1) / (x2-x1);
+                x = x_min;
+            }
+
+            //replace point outsite rectable dengan point yang di border
+            if(code_out == code1){
+                x1 = x;
+                y1 = y;
+                code1 = computeCode(p1);
+            }else{
+                x2 = x;
+                y2 = y;
+                code2 = computeCode(p2);
+            }
+        }
+    }
+    if(isDrawn){
+        point p1; p1.x = x1; p1.y = y1;
+        point p2; p2.x = x2; p2.y = y2;
+        hasil.point1 = p1;
+        hasil.point2 = p2;
+    }
+}
