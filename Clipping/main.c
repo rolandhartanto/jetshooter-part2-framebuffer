@@ -58,6 +58,9 @@ typedef struct{
 airplane jet;
 line hasil;//untuk mencatat hasil line clipping
 char bg[1000][1000];
+point stack[500000];
+point stackTemp[500000];
+int isVisited[900][900];
 
 char *fbp = 0;
 int fbfd = 0;
@@ -110,6 +113,8 @@ void rasterize(int roffset, int coffset, int height, int width, int colorR, int 
 void drawPropeller(int d1, int d2, point pivot, double theta, double scale_factor, int colorR, int colorG, int colorB);//theta = 0 start from pivot.x-d1/2
 void drawAirplane(point offset, double scale_factor, double theta);
 
+void floodFill(point source, int colorR, int colorG, int colorB);
+
 int main() {
     init();   
     int i,j;
@@ -134,9 +139,50 @@ int main() {
     int counter = 0;
     int x=200,y=250;
     double degree = 0;
+    int counterGeser = 0;
     while(1){    
         for(i = 1; i < 360; i+=24){
             clearScreen();
+            // printf("mau gambar pesawat\n");
+            if(counterGeser==10){
+
+                for(j=1;j<=230;j+=10){
+                    clearScreen();
+                    // printf("j: %d\n",j);
+                    point p = translatePoint(setPoint(x,y),-j,0);
+                    drawAirplane(p,k,degree);
+
+                    point pivot = translatePoint(setPoint(x+150,y+90),-j,0);
+                    drawPropeller(120,30,pivot,i,k,150,0,20);
+                    int offsetRow = pivot.y-120;
+                    int offsetCol = pivot.x-120;
+                    if(offsetRow<0){offsetRow = 0;}
+                    else if(offsetRow>=HEIGHT){offsetRow = HEIGHT-1;}
+                    if(offsetCol<0){offsetCol = 0;}
+                    else if(offsetCol>=WIDTH){offsetCol = WIDTH-1;}
+                    rasterize(offsetRow, offsetCol, 240,240,150,0,20);
+                }
+
+                int jSekarang = j;
+                // printf("jSekarang: %d\n",j);
+                for(j=-jSekarang;j<=300;j+=10){
+                    clearScreen();
+                    // printf("j lagi: %d\n",j);
+                    point p = translatePoint(setPoint(x,y),j,0);
+                    drawAirplane(p,k,degree);   
+                    point pivot = translatePoint(setPoint(x+150,y+90),j,0);
+                    drawPropeller(120,30,pivot,i,k,150,0,20);
+                    int offsetRow = pivot.y-120;
+                    int offsetCol = pivot.x-120;
+                    if(offsetRow<0){offsetRow = 0;}
+                    else if(offsetRow>=HEIGHT){offsetRow = HEIGHT-1;}
+                    if(offsetCol<0){offsetCol = 0;}
+                    else if(offsetCol>=WIDTH){offsetCol = WIDTH-1;}
+                    rasterize(offsetRow, offsetCol, 240,240,150,0,20);
+                }
+                counterGeser = 0;
+                return 0;
+            }
             drawAirplane(setPoint(x,y),k,degree);
             
             if((x < 230)&&(right)){
@@ -154,27 +200,42 @@ int main() {
             //p1a = rotatePoint(p1, i, pivot);
             //p2a = rotatePoint(p2, i, pivot);
             //drawLine(p2a,p1a,1);
+            // printf("mau gambar\n");
             drawPropeller(120,30,setPoint(x+150,y+90),i,k,150,0,20);
-            if(counter >= 50){
-	           k -= 0.02;
+            // floodFill(setPoint(x+150, y+90), 150,0,20);
+            // printf("tergambar\n");
+            
+            if(counter >= 10){
+	           k -= 0.12;
 	        }
-            if(k >= 4.3){
+            // printf("masih\n");
+            if(k >= 3.8){
                 enlarge = 0;
                 counter++;
             }
-            
+            // printf("masih2\n");
             if(k <= 1.0){
                 enlarge = 1;
                 counter = 0;
             }
-
+            // printf("masih3\n");
             if(enlarge){
-                k += 0.02;
+                k += 0.12;
             }
-
+            // printf("counter: %d\n",counter);
+            // printf("k: %.2lf\n",k);
+            // printf("masih4\n");
             //printf("%lf\n",degree);
-            //rasterize(pivot.y-120, pivot.x-120, 240,240,150,0,20);
-            
+            int offsetRow = pivot.y-120;
+            int offsetCol = pivot.x-120;
+            if(offsetRow<0){offsetRow = 0;}
+            else if(offsetRow>=HEIGHT){offsetRow = HEIGHT-1;}
+            if(offsetCol<0){offsetCol = 0;}
+            else if(offsetCol>=WIDTH){offsetCol = WIDTH-1;}
+            rasterize(offsetRow, offsetCol, 240,240,150,0,20);
+
+            // printf("halo\n");
+            counterGeser++;
             //printPixel(p1.x, p1.y, 0, 100, 255);
             for(j = 0; j < 10000000; j++){} //for delay
         }
@@ -489,44 +550,60 @@ point scalePoint(point p, double scale_factor, point pivot){
 /************************* DRAW CUSTOM OBJECT *************************/
 void drawPropeller(int d1, int d2, point pivot, double theta, double scale_factor, int colorR, int colorG, int colorB){
     point p1, p2, p3, p4, po1, pt1, po2, pt2, po3, pt3, po4, pt4;
-    p1 = setPoint(pivot.x-d1/2, pivot.y);
-    p2 = setPoint(pivot.x, pivot.y-d2/2);
-    p3 = setPoint(pivot.x+d1/2, pivot.y);
-    p4 = setPoint(pivot.x, pivot.y+d2/2);   
+    int i;
+    point p[5];
+    p[0] = setPoint(pivot.x-d1/2, pivot.y);
+    p[1] = setPoint(pivot.x, pivot.y-d2/2);
+    p[2] = setPoint(pivot.x+d1/2, pivot.y);
+    p[3] = setPoint(pivot.x, pivot.y+d2/2);   
 
-    p1 = rotatePoint(scalePoint(p1, scale_factor, pivot), theta, pivot);
-    p2 = rotatePoint(scalePoint(p2, scale_factor, pivot), theta, pivot);
-    p3 = rotatePoint(scalePoint(p3, scale_factor, pivot), theta, pivot);
-    p4 = rotatePoint(scalePoint(p4, scale_factor, pivot), theta, pivot);
+    for(i=0;i<4;i++){
+        p[i] = rotatePoint(scalePoint(p[i], scale_factor, pivot), theta, pivot);
+    }
+    for(i=0;i<4;i++){
+        if(i<3){
+            cohenSutherlandClipping(p[i],p[i+1]);
+            // printf("%d dengan %d\n",i,i+1);
+        }else{
+            cohenSutherlandClipping(p[3],p[0]);
+            // printf("%d dengan %d\n",3,0);
+        }
+        
+        po1 = hasil.point1; pt1 = hasil.point2;
+        // printf("p1: %d %d p2: %d %d\n",po1.x,po1.y,pt1.x,pt1.y);
+        drawLine(po1, pt1, 1, colorR, colorG, colorB);
+    }
     
-    cohenSutherlandClipping(p1,p2);
-
-    point p1hasil, p2hasil;
-    p1hasil = hasil.point1; p2hasil = hasil.point2;
-    // if(p1hasil.x!=p1.x || p1hasil.y!=p1.y || p2hasil.y!=p1.x || p2hasil.y!=p1.x){}
-    //printf("p1: %d %d p2: %d %d p1hasil:%d %d p2hasil: %d %d\n",p1.x,p1.y,p2.x,p2.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
-    po1 = hasil.point1; pt1 = hasil.point2;
-    drawLine(po1, pt1, 1, colorR, colorG, colorB);
-
-    cohenSutherlandClipping(p2,p3);
-    p1hasil = hasil.point1; p2hasil = hasil.point2;
-    //printf("p2: %d %d p3: %d %d p1hasil:%d %d p2hasil: %d %d\n",p2.x,p2.y,p3.x,p3.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
-    po2 = hasil.point1; pt2 = hasil.point2;
-    drawLine(po2, pt2, 1, colorR, colorG, colorB);
-    //bikin garis klo misal sama"x nya di x_max
+    // po1 = hasil.point1; pt1 = hasil.point2;
+    // drawLine(po1, pt1, 1, colorR, colorG, colorB);
+    
     
 
-    cohenSutherlandClipping(p3,p4);
-    p1hasil = hasil.point1; p2hasil = hasil.point2;
-    //printf("p3: %d %d p4: %d %d p1hasil:%d %d p2hasil: %d %d\n",p3.x,p3.y,p4.x,p4.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
-	po3 = hasil.point1; pt3 = hasil.point2;
-    drawLine(po3, pt3, 1, colorR, colorG, colorB);
+ //    point p1hasil, p2hasil;
+ //    p1hasil = hasil.point1; p2hasil = hasil.point2;
+ //    // if(p1hasil.x!=p1.x || p1hasil.y!=p1.y || p2hasil.y!=p1.x || p2hasil.y!=p1.x){}
+ //    //printf("p1: %d %d p2: %d %d p1hasil:%d %d p2hasil: %d %d\n",p1.x,p1.y,p2.x,p2.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
+    
 
-    cohenSutherlandClipping(p4,p1);
-    p1hasil = hasil.point1; p2hasil = hasil.point2;
-    //printf("p4: %d %d p1: %d %d p1hasil:%d %d p2hasil: %d %d\n",p4.x,p4.y,p1.x,p1.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
-    po4 = hasil.point1; pt4 = hasil.point2;
-    drawLine(po4, pt4, 1, colorR, colorG, colorB);
+ //    cohenSutherlandClipping(p2,p3);
+ //    p1hasil = hasil.point1; p2hasil = hasil.point2;
+ //    //printf("p2: %d %d p3: %d %d p1hasil:%d %d p2hasil: %d %d\n",p2.x,p2.y,p3.x,p3.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
+ //    po2 = hasil.point1; pt2 = hasil.point2;
+ //    drawLine(po2, pt2, 1, colorR, colorG, colorB);
+ //    //bikin garis klo misal sama"x nya di x_max
+    
+
+ //    cohenSutherlandClipping(p3,p4);
+ //    p1hasil = hasil.point1; p2hasil = hasil.point2;
+ //    //printf("p3: %d %d p4: %d %d p1hasil:%d %d p2hasil: %d %d\n",p3.x,p3.y,p4.x,p4.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
+	// po3 = hasil.point1; pt3 = hasil.point2;
+ //    drawLine(po3, pt3, 1, colorR, colorG, colorB);
+
+ //    cohenSutherlandClipping(p4,p1);
+ //    p1hasil = hasil.point1; p2hasil = hasil.point2;
+ //    //printf("p4: %d %d p1: %d %d p1hasil:%d %d p2hasil: %d %d\n",p4.x,p4.y,p1.x,p1.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
+ //    po4 = hasil.point1; pt4 = hasil.point2;
+ //    drawLine(po4, pt4, 1, colorR, colorG, colorB);
 
     // printf("p1: %d %d p2: %d %d p3: %d %d p4: %d %d\n",p1.x,p1.y,p2.x,p2.y,p3.x,p3.y,p4.x,p4.y);
 }
@@ -535,6 +612,8 @@ void drawAirplane(point offset, double scale_factor, double theta){
     //left wing
     point p1,p2, pcolor;
     point pivot = setPoint(150+offset.x, 90+offset.y);
+    point listPoint1[3], listPoint2[3];
+    // printf("mau gambar left_wing\n");
     for(int i=0;i<3;i++){
         p1 = setPoint(jet.left_wing.borders[i].point1.x + offset.x, 
                       jet.left_wing.borders[i].point1.y + offset.y);
@@ -552,10 +631,28 @@ void drawAirplane(point offset, double scale_factor, double theta){
         
         cohenSutherlandClipping(p1,p2);
         p1 = hasil.point1; p2 = hasil.point2;
+        listPoint1[i] = p1; listPoint2[i] = p2;
+        // printf("i: %d p1: %d %d p2: %d %d\n",i,p1.x, p1.y, p2.x, p2.y);
+        // printf("listPoint1[%d]: %d %d listPoint2[%d]: %d %d\n",i,listPoint1[i].x,listPoint1[i].y,i,listPoint2[i].x,listPoint2[i].y);
         drawLine(p1, p2, 1, 107,91,0);    
     }
-    rasterize(pcolor.y-50 * scale_factor, pcolor.x, 150 * scale_factor,150 * scale_factor,107,91,0);
-    
+    // printf("mau gambar garis border\n");
+    if(listPoint1[0].x==0 && listPoint2[2].x==0){
+        p1 = listPoint1[0]; p2 = listPoint2[2];
+        drawLine(p1, p2, 1, 107,91,0);
+    }
+    // printf("mau ngeraster\n");
+    // int nilai = ;
+    // if(nilai<0){nilai = 0;}
+    int nilai1 = pcolor.y-50 * scale_factor;
+    if(nilai1<0){nilai1 = 0;}
+    else if(nilai1>=HEIGHT){nilai1 = HEIGHT-1;}
+    int nilai2 = pcolor.x;
+    if(nilai2<0){nilai2 = 0;}
+    else if(nilai2>=WIDTH){nilai2 = WIDTH-1;}
+
+    rasterize(nilai1, nilai2, 150 * scale_factor,150 * scale_factor,107,91,0);
+    // printf("abis raster left wing\n");
     //right wing
     for(int i=0;i<3;i++){
         p1 = setPoint(jet.right_wing.borders[i].point1.x + offset.x, 
@@ -574,10 +671,28 @@ void drawAirplane(point offset, double scale_factor, double theta){
 
         cohenSutherlandClipping(p1,p2);
         p1 = hasil.point1; p2 = hasil.point2;
+        listPoint1[i] = p1; listPoint2[i] = p2;
+        // printf("i: %d p1: %d %d p2: %d %d\n",i,p1.x, p1.y, p2.x, p2.y);
+        // printf("listPoint1[%d]: %d %d listPoint2[%d]: %d %d\n",i,listPoint1[i].x,listPoint1[i].y,i,listPoint2[i].x,listPoint2[i].y);
         drawLine(p1, p2, 1, 107,91,0);     
     }
-    //rasterize(pcolor.y-50 * scale_factor, pcolor.x-20, 150 * scale_factor,150 * scale_factor,107,91,0);
-    
+    // printf("mau gambar garis\n");
+    if(listPoint2[0].x==0 && listPoint1[1].x==0){
+        p1 = listPoint2[0]; p2 = listPoint1[1];
+        drawLine(p1, p2, 1, 107,91,0);
+    }
+    // printf("mau raster\n");
+    // nilai = ;
+    // if(nilai<0){nilai = 0;}
+    nilai1 = pcolor.y-50 * scale_factor;
+    if(nilai1<0){nilai1 = 0;}
+    else if(nilai1>=HEIGHT){nilai1 = HEIGHT-1;}
+    nilai2 = pcolor.x-20;
+    if(nilai2<0){nilai2 = 0;}
+    else if(nilai2>=WIDTH){nilai2 = WIDTH-1;}
+    rasterize(nilai1, nilai2, 150 * scale_factor,150 * scale_factor,107,91,0);
+    // printf("abis raster right wing\n");
+    // printf("abis raster\n");
     //tail
     for(int i=0;i<3;i++){
         p1 = setPoint(jet.tail.borders[i].point1.x + offset.x, 
@@ -598,35 +713,48 @@ void drawAirplane(point offset, double scale_factor, double theta){
         p1 = hasil.point1; p2 = hasil.point2;
         drawLine(p1, p2, 1, 107,91,0);   
     }
-    //rasterize(pcolor.y-20 * scale_factor, pcolor.x-20 * scale_factor, 150 * scale_factor,150 * scale_factor,107,91,0);
+    // printf("mau raster1\n");
+    nilai1 = pcolor.y-20 * scale_factor;
+    if(nilai1<0){nilai1 = 0;}
+    else if(nilai1>=HEIGHT){nilai1 = HEIGHT-1;}
+    nilai2 = pcolor.x-20 * scale_factor;
+    if(nilai2<0){nilai2 = 0;}
+    else if(nilai2>=WIDTH){nilai2 = WIDTH-1;}
 
+    rasterize(nilai1, nilai2, 150 * scale_factor,150 * scale_factor,107,91,0);
+    // printf("abis raster1\n");
     //cockpit
     p1 = setPoint(jet.cockpit_center.x + offset.x, jet.cockpit_center.y + offset.y);
     p1 = rotatePoint(scalePoint(p1,scale_factor,pivot),theta,pivot);
     drawCircle(p1, jet.cockpit_radius * scale_factor, 114,114,114);
-    /*rasterize(p1.y - (jet.cockpit_radius+5) * scale_factor, 
+    rasterize(p1.y - (jet.cockpit_radius+5) * scale_factor, 
               p1.x - (jet.cockpit_radius+5) * scale_factor, 
               2 * (jet.cockpit_radius+5) * scale_factor, 
               2 * (jet.cockpit_radius+5) * scale_factor, 
-              114, 114, 114);*/
-
+              114, 114, 114);
+    // printf("abis raster2\n");
+    // printf("abis raster cockpit\n");
     //body
     p1 = setPoint(jet.body_center.x + offset.x, jet.body_center.y + offset.y);
     drawCircle(p1, jet.body_radius * scale_factor,168,143,0);
-    /*rasterize(p1.y - (jet.body_radius+5) * scale_factor, 
+    rasterize(p1.y - (jet.body_radius+5) * scale_factor, 
               p1.x - (jet.body_radius+5) * scale_factor, 
               2 * (jet.body_radius+5) * scale_factor, 
               2 * (jet.body_radius+5) * scale_factor, 
-              168, 143, 0);*/
-
+              168, 143, 0);
+    // printf("abis raster3\n");
+    // printf("abis raster body\n");
     //inner
+
     p1 = setPoint(jet.inner_center.x + offset.x, jet.inner_center.y + offset.y);
     drawCircle(p1, jet.inner_radius * scale_factor,107, 80,0);
-    /*rasterize(p1.y - (jet.inner_radius+5) * scale_factor, 
+    rasterize(p1.y - (jet.inner_radius+5) * scale_factor, 
               p1.x - (jet.inner_radius+5) * scale_factor, 
               2 * (jet.inner_radius+5) * scale_factor, 
               2 * (jet.inner_radius+5) * scale_factor, 
-              107, 80, 0);*/
+              107, 80, 0);
+    // printf("abis raster4\n");
+    // printf("abis raster inner\n");
 
     
 }
@@ -705,4 +833,66 @@ void cohenSutherlandClipping(point p1, point p2){
         hasil.point1 = p1;
         hasil.point2 = p2;
     }
+}
+
+void floodFill(point source, int colorR, int colorG, int colorB){
+    int dx[] = {0,1,0,-1};
+    int dy[] = {-1,0,1,0};
+
+    // location = (x+vinfo.xoffset) * (vinfo.bits_per_pixel/8) +
+    //                    (y+vinfo.yoffset) * finfo.line_length;
+
+    // if (vinfo.bits_per_pixel == 32) {
+    //     *(fbp + location) = colorB;         //Blue Color
+    //     *(fbp + location + 1) = colorG;     //Green Color
+    //     *(fbp + location + 2) = colorR;     //Red Color
+    //     *(fbp + location + 3) = 0;          //Transparancy
+    // }
+
+    int i,j;
+    int x = source.x, y = source.y;
+    printPixel(x,y,colorR,colorG,colorB);
+    //reset isVisited
+    memset(isVisited,0,sizeof isVisited);
+    int ukuranStack = 1;
+    stack[0] = source;
+    isVisited[x][y] = 1;
+    while(ukuranStack>0){
+        int idxStackTemp = 0;
+        int idxStack = 0;
+        for(j=idxStack;j<ukuranStack;j++){
+            x = stack[j].x; y = stack[j].y;
+
+            for(i=0;i<4;i++){
+                int xbaru = x+dx[i], ybaru = y+dy[i];
+                // printf("x: %d y: %d xbaru: %d ybaru: %d\n",x,y,xbaru,ybaru);
+                if(xbaru>=0 && xbaru<WIDTH && ybaru>=0 && ybaru<HEIGHT){
+                    location = (xbaru+vinfo.xoffset) * (vinfo.bits_per_pixel/8) +
+                           (ybaru+vinfo.yoffset) * finfo.line_length;
+                    // printf("merah: %d hijau: %d biru: %d\n", *(fbp+location+2), *(fbp+location+1), *(fbp+location)); 
+                    // printf("intended: %d %d %d\n", colorR, colorG, colorB);
+                    if((*(fbp+location)==colorB) && (*(fbp+location+1)==colorG) && (*(fbp+location+2)==colorR)){
+                        printf("masuk kondisi sini\n");
+                        continue;
+                    }
+                    if(isVisited[xbaru][ybaru]){continue;}
+                    //masukin ke stack
+                    point pBaru;
+                    pBaru.x = xbaru; pBaru.y = ybaru;
+                    stackTemp[idxStackTemp] = pBaru; idxStackTemp++;
+                    // printf("idxStackTemp jadi: %d\n",idxStackTemp);
+                    printPixel(xbaru,ybaru,colorR,colorG,colorB);
+                    isVisited[xbaru][ybaru] = 1;
+                }
+            }
+        }
+        //ukuranStack = 0;
+        // printf("idxStackTemp: %d\n",idxStackTemp);
+        for(i=0;i<idxStackTemp;i++){
+            stack[i] = stackTemp[i];
+        }
+        ukuranStack = idxStackTemp;
+        // printf("ukuranStack: %d\n",ukuranStack);
+    }
+    
 }

@@ -504,13 +504,13 @@ void drawPropeller(int d1, int d2, point pivot, double theta, double scale_facto
     point p1hasil, p2hasil;
     p1hasil = hasil.point1; p2hasil = hasil.point2;
     // if(p1hasil.x!=p1.x || p1hasil.y!=p1.y || p2hasil.y!=p1.x || p2hasil.y!=p1.x){}
-    printf("p1: %d %d p2: %d %d p1hasil:%d %d p2hasil: %d %d\n",p1.x,p1.y,p2.x,p2.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
+    // printf("p1: %d %d p2: %d %d p1hasil:%d %d p2hasil: %d %d\n",p1.x,p1.y,p2.x,p2.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
     p1 = hasil.point1; p2 = hasil.point2;
     drawLine(p1, p2, 1, colorR, colorG, colorB);
 
     cohenSutherlandClipping(p2,p3);
     p1hasil = hasil.point1; p2hasil = hasil.point2;
-    printf("p2: %d %d p3: %d %d p1hasil:%d %d p2hasil: %d %d\n",p2.x,p2.y,p3.x,p3.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
+    // printf("p2: %d %d p3: %d %d p1hasil:%d %d p2hasil: %d %d\n",p2.x,p2.y,p3.x,p3.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
     p2 = hasil.point1; p3 = hasil.point2;
     drawLine(p2, p3, 1, colorR, colorG, colorB);
 
@@ -519,13 +519,13 @@ void drawPropeller(int d1, int d2, point pivot, double theta, double scale_facto
 
     cohenSutherlandClipping(p3,p4);
     p1hasil = hasil.point1; p2hasil = hasil.point2;
-    printf("p3: %d %d p4: %d %d p1hasil:%d %d p2hasil: %d %d\n",p3.x,p3.y,p4.x,p4.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
+    // printf("p3: %d %d p4: %d %d p1hasil:%d %d p2hasil: %d %d\n",p3.x,p3.y,p4.x,p4.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
     p3 = hasil.point1; p4 = hasil.point2;
     drawLine(p3, p4, 1, colorR, colorG, colorB);
 
     cohenSutherlandClipping(p4,p1);
     p1hasil = hasil.point1; p2hasil = hasil.point2;
-    printf("p4: %d %d p1: %d %d p1hasil:%d %d p2hasil: %d %d\n",p4.x,p4.y,p1.x,p1.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
+    // printf("p4: %d %d p1: %d %d p1hasil:%d %d p2hasil: %d %d\n",p4.x,p4.y,p1.x,p1.y,p1hasil.x,p1hasil.y,p2hasil.x,p2hasil.y);
     p4 = hasil.point1; p1 = hasil.point2;
     drawLine(p4, p1, 1, colorR, colorG, colorB);
 
