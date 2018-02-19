@@ -44,7 +44,7 @@ typedef struct{
     shape tail; // triangle
     shape left_wing; //triangle
     shape right_wing; //triangle
-    
+    point right_wing_center;
     point cockpit_center;
     int cockpit_radius;
     
@@ -60,7 +60,8 @@ line hasil;//untuk mencatat hasil line clipping
 char bg[1000][1000];
 point stack[500000];
 point stackTemp[500000];
-int isVisited[900][900];
+int isVisited1[900][900];
+int isVisited2[900][900];
 
 char *fbp = 0;
 int fbfd = 0;
@@ -79,6 +80,10 @@ const int x_min = 0;
 const int y_min = HEIGHT;
 const int x_max = WIDTH;
 const int y_max = 0;
+
+//untuk delay
+const int iterationMax = 1e7;
+int kodeBidang;
 
 // menghitung region code of a point
 int computeCode(point p);
@@ -103,6 +108,7 @@ void printPixel(int x, int y, int colorR, int colorG, int colorB);
 void drawLine(point p1, point p2, int thickness, int colorR, int colorG, int colorB);
 void drawCircle(point center, int radius, int colorR, int colorG, int colorB);
 void clearScreen();
+void delay();
 
 //void drawPolygon(point center, int radius, int num_of_side, double theta);//STILL BUGGY(int&floating point problem), polygon with same side length, theta=0 start from center.y-radius
 
@@ -143,6 +149,9 @@ int main() {
     while(1){    
         for(i = 1; i < 360; i+=24){
             clearScreen();
+            kodeBidang = 0;
+            memset(isVisited1,0,sizeof isVisited1);
+            
             // printf("mau gambar pesawat\n");
             if(counterGeser==10){
 
@@ -150,17 +159,25 @@ int main() {
                     clearScreen();
                     // printf("j: %d\n",j);
                     point p = translatePoint(setPoint(x,y),-j,0);
+                    memset(isVisited2,0,sizeof isVisited2);
                     drawAirplane(p,k,degree);
 
                     point pivot = translatePoint(setPoint(x+150,y+90),-j,0);
+                    kodeBidang = 1;
+                    memset(isVisited1,0,sizeof isVisited1);
+                    
                     drawPropeller(120,30,pivot,i,k,150,0,20);
-                    int offsetRow = pivot.y-120;
-                    int offsetCol = pivot.x-120;
-                    if(offsetRow<0){offsetRow = 0;}
-                    else if(offsetRow>=HEIGHT){offsetRow = HEIGHT-1;}
-                    if(offsetCol<0){offsetCol = 0;}
-                    else if(offsetCol>=WIDTH){offsetCol = WIDTH-1;}
-                    rasterize(offsetRow, offsetCol, 240,240,150,0,20);
+                    floodFill(pivot, 150,0,20);
+                    // return 0;
+                    // int offsetRow = pivot.y-120;
+                    // int offsetCol = pivot.x-120;
+                    // if(offsetRow<0){offsetRow = 0;}
+                    // else if(offsetRow>=HEIGHT){offsetRow = HEIGHT-1;}
+                    // if(offsetCol<0){offsetCol = 0;}
+                    // else if(offsetCol>=WIDTH){offsetCol = WIDTH-1;}
+                    // rasterize(offsetRow, offsetCol, 240,240,150,0,20);
+                    delay(iterationMax);
+                    kodeBidang = 0;
                 }
 
                 int jSekarang = j;
@@ -169,29 +186,40 @@ int main() {
                     clearScreen();
                     // printf("j lagi: %d\n",j);
                     point p = translatePoint(setPoint(x,y),j,0);
+                    memset(isVisited2,0,sizeof isVisited2);
+                    
                     drawAirplane(p,k,degree);   
+                    kodeBidang = 0;
                     point pivot = translatePoint(setPoint(x+150,y+90),j,0);
+
+                    kodeBidang = 1;
+                    memset(isVisited1,0,sizeof isVisited1);
+                    
                     drawPropeller(120,30,pivot,i,k,150,0,20);
-                    int offsetRow = pivot.y-120;
-                    int offsetCol = pivot.x-120;
-                    if(offsetRow<0){offsetRow = 0;}
-                    else if(offsetRow>=HEIGHT){offsetRow = HEIGHT-1;}
-                    if(offsetCol<0){offsetCol = 0;}
-                    else if(offsetCol>=WIDTH){offsetCol = WIDTH-1;}
-                    rasterize(offsetRow, offsetCol, 240,240,150,0,20);
+                    floodFill(pivot, 150,0,20);
+                    // int offsetRow = pivot.y-120;
+                    // int offsetCol = pivot.x-120;
+                    // if(offsetRow<0){offsetRow = 0;}
+                    // else if(offsetRow>=HEIGHT){offsetRow = HEIGHT-1;}
+                    // if(offsetCol<0){offsetCol = 0;}
+                    // else if(offsetCol>=WIDTH){offsetCol = WIDTH-1;}
+                    // rasterize(offsetRow, offsetCol, 240,240,150,0,20);
+                    delay(iterationMax);
+                    kodeBidang = 0;
                 }
                 counterGeser = 0;
                 return 0;
             }
+            memset(isVisited2,0,sizeof isVisited2);
             drawAirplane(setPoint(x,y),k,degree);
             
             if((x < 230)&&(right)){
                 x++;
-                degree -= 0.2;
+                //degree -= 0.2;
             }else{
                 right = 0;
                 x--;
-                degree += 0.2;
+                //degree += 0.2;
                 if(x == 170){
                     right = 1;
                 }
@@ -201,8 +229,10 @@ int main() {
             //p2a = rotatePoint(p2, i, pivot);
             //drawLine(p2a,p1a,1);
             // printf("mau gambar\n");
+            kodeBidang = 1;
             drawPropeller(120,30,setPoint(x+150,y+90),i,k,150,0,20);
-            // floodFill(setPoint(x+150, y+90), 150,0,20);
+            floodFill(setPoint(x+150, y+90), 150,0,20);
+            kodeBidang = 0;
             // printf("tergambar\n");
             
             if(counter >= 10){
@@ -226,18 +256,18 @@ int main() {
             // printf("k: %.2lf\n",k);
             // printf("masih4\n");
             //printf("%lf\n",degree);
-            int offsetRow = pivot.y-120;
-            int offsetCol = pivot.x-120;
-            if(offsetRow<0){offsetRow = 0;}
-            else if(offsetRow>=HEIGHT){offsetRow = HEIGHT-1;}
-            if(offsetCol<0){offsetCol = 0;}
-            else if(offsetCol>=WIDTH){offsetCol = WIDTH-1;}
-            rasterize(offsetRow, offsetCol, 240,240,150,0,20);
+            // int offsetRow = pivot.y-120;
+            // int offsetCol = pivot.x-120;
+            // if(offsetRow<0){offsetRow = 0;}
+            // else if(offsetRow>=HEIGHT){offsetRow = HEIGHT-1;}
+            // if(offsetCol<0){offsetCol = 0;}
+            // else if(offsetCol>=WIDTH){offsetCol = WIDTH-1;}
+            // rasterize(offsetRow, offsetCol, 240,240,150,0,20);
 
             // printf("halo\n");
             counterGeser++;
             //printPixel(p1.x, p1.y, 0, 100, 255);
-            for(j = 0; j < 10000000; j++){} //for delay
+            delay(iterationMax);
         }
     }
     
@@ -305,6 +335,7 @@ void loadFile(){
             }
         }
     }
+    jet.right_wing_center = setPoint(200,110);
     fclose(fairplane);
 }
 
@@ -384,8 +415,18 @@ void drawLine(point p1, point p2, int thickness, int colorR, int colorG, int col
     for(int x = x1; x <= x2; x++){
         if(steep){
             printPixel(y,x,colorR,colorG,colorB);
+            if(kodeBidang==1){
+                isVisited1[y][x] = 1;
+            }else if(kodeBidang==2){
+                isVisited2[y][x] = 1;
+            }
         }else{
             printPixel(x,y,colorR,colorG,colorB);
+            if(kodeBidang==1){
+                isVisited1[x][y] = 1;
+            }else if(kodeBidang==2){
+                isVisited2[x][y] = 1;
+            }
         }
         err+=derr;
         if(err > dx){
@@ -674,16 +715,34 @@ void drawAirplane(point offset, double scale_factor, double theta){
         listPoint1[i] = p1; listPoint2[i] = p2;
         // printf("i: %d p1: %d %d p2: %d %d\n",i,p1.x, p1.y, p2.x, p2.y);
         // printf("listPoint1[%d]: %d %d listPoint2[%d]: %d %d\n",i,listPoint1[i].x,listPoint1[i].y,i,listPoint2[i].x,listPoint2[i].y);
-        drawLine(p1, p2, 1, 107,91,0);     
+        
+        point pivotCenterRightWing;
+        pivotCenterRightWing = setPoint(jet.right_wing_center.x + offset.x, jet.right_wing_center.y + offset.y);
+        pivotCenterRightWing = scalePoint(pivotCenterRightWing, scale_factor, pivot);
+        pivotCenterRightWing = rotatePoint(pivotCenterRightWing, theta, pivot);
+
+        kodeBidang = 2;
+        drawLine(p1, p2, 1, 107,91,0);
+        if(pivotCenterRightWing.x<0){pivotCenterRightWing.x = 0;}
+        else if(pivotCenterRightWing.x>=WIDTH){pivotCenterRightWing.x = WIDTH-1;}
+
+        if(pivotCenterRightWing.y<0){pivotCenterRightWing.y = 0;}
+        else if(pivotCenterRightWing.y>=HEIGHT){pivotCenterRightWing.y = HEIGHT-1;}
+        // printf("pivot: %d %d\n",pivotCenterRightWing.x,pivotCenterRightWing.y);
+        // floodFill(pivotCenterRightWing, 107, 91, 0);
+
+        kodeBidang = 0;
     }
     // printf("mau gambar garis\n");
-    if(listPoint2[0].x==0 && listPoint1[1].x==0){
+    if(listPoint2[0].x==WIDTH && listPoint1[1].x==WIDTH){
         p1 = listPoint2[0]; p2 = listPoint1[1];
+        p1.x--; p2.x--; 
         drawLine(p1, p2, 1, 107,91,0);
     }
     // printf("mau raster\n");
     // nilai = ;
     // if(nilai<0){nilai = 0;}
+
     nilai1 = pcolor.y-50 * scale_factor;
     if(nilai1<0){nilai1 = 0;}
     else if(nilai1>=HEIGHT){nilai1 = HEIGHT-1;}
@@ -691,6 +750,7 @@ void drawAirplane(point offset, double scale_factor, double theta){
     if(nilai2<0){nilai2 = 0;}
     else if(nilai2>=WIDTH){nilai2 = WIDTH-1;}
     rasterize(nilai1, nilai2, 150 * scale_factor,150 * scale_factor,107,91,0);
+
     // printf("abis raster right wing\n");
     // printf("abis raster\n");
     //tail
@@ -853,10 +913,16 @@ void floodFill(point source, int colorR, int colorG, int colorB){
     int x = source.x, y = source.y;
     printPixel(x,y,colorR,colorG,colorB);
     //reset isVisited
-    memset(isVisited,0,sizeof isVisited);
+    
     int ukuranStack = 1;
     stack[0] = source;
-    isVisited[x][y] = 1;
+    if(kodeBidang==1){
+        isVisited1[x][y] = 1;    
+    }else if(kodeBidang==2){
+        isVisited2[x][y] = 1;
+    }
+    // printf("pivot: %d %d\n",x,y);
+    
     while(ukuranStack>0){
         int idxStackTemp = 0;
         int idxStack = 0;
@@ -867,22 +933,36 @@ void floodFill(point source, int colorR, int colorG, int colorB){
                 int xbaru = x+dx[i], ybaru = y+dy[i];
                 // printf("x: %d y: %d xbaru: %d ybaru: %d\n",x,y,xbaru,ybaru);
                 if(xbaru>=0 && xbaru<WIDTH && ybaru>=0 && ybaru<HEIGHT){
-                    location = (xbaru+vinfo.xoffset) * (vinfo.bits_per_pixel/8) +
-                           (ybaru+vinfo.yoffset) * finfo.line_length;
-                    // printf("merah: %d hijau: %d biru: %d\n", *(fbp+location+2), *(fbp+location+1), *(fbp+location)); 
-                    // printf("intended: %d %d %d\n", colorR, colorG, colorB);
-                    if((*(fbp+location)==colorB) && (*(fbp+location+1)==colorG) && (*(fbp+location+2)==colorR)){
-                        printf("masuk kondisi sini\n");
-                        continue;
+                    // location = (xbaru+vinfo.xoffset) * (vinfo.bits_per_pixel/8) +
+                    //        (ybaru+vinfo.yoffset) * finfo.line_length;
+                    // // printf("merah: %d hijau: %d biru: %d\n", *(fbp+location+2), *(fbp+location+1), *(fbp+location)); 
+                    // // printf("intended: %d %d %d\n", colorR, colorG, colorB);
+                    // if((*(fbp+location)==colorB) && (*(fbp+location+1)==colorG) && (*(fbp+location+2)==colorR)){
+                    //     // printf("masuk kondisi sini\n");
+                    //     continue;
+                    // }
+                    if(kodeBidang==1){
+                        if(isVisited1[xbaru][ybaru]){continue;}    
+                    }else if(kodeBidang==2){
+                        if(isVisited2[xbaru][ybaru]){continue;}    
                     }
-                    if(isVisited[xbaru][ybaru]){continue;}
+                    
+
+                    
                     //masukin ke stack
                     point pBaru;
                     pBaru.x = xbaru; pBaru.y = ybaru;
                     stackTemp[idxStackTemp] = pBaru; idxStackTemp++;
                     // printf("idxStackTemp jadi: %d\n",idxStackTemp);
                     printPixel(xbaru,ybaru,colorR,colorG,colorB);
-                    isVisited[xbaru][ybaru] = 1;
+                    if(kodeBidang==1){
+                        isVisited1[xbaru][ybaru] = 1;    
+                    }else if(kodeBidang==2){
+                        isVisited2[xbaru][ybaru] = 1;
+                        // printf("yang dipush xbaru: %d ybaru: %d\n",xbaru,ybaru);
+                    }
+
+                    
                 }
             }
         }
@@ -895,4 +975,8 @@ void floodFill(point source, int colorR, int colorG, int colorB){
         // printf("ukuranStack: %d\n",ukuranStack);
     }
     
+}
+void delay(int banyakIterasi){
+    int i;
+    for(i=0;i<banyakIterasi;i++){}
 }
